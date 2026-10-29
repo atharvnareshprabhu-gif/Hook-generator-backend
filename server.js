@@ -3,31 +3,27 @@ const cors = require('cors');
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type']
+}));
 
-// Environment variables se security secrets aur OpenAI key uthayenge
-const APP_SECRET = process.env.APP_SECRET || "hookcraft_secure_key_123"; 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-// Health check route
 app.get('/', (req, res) => {
-    res.json({ status: "HookCraft AI OpenAI Backend is live and running!" });
+    res.json({ status: "HookCraft AI Backend is live!" });
 });
 
-// Hook Generation Endpoint
 app.post('/api/generate-hook', async (req, res) => {
     try {
-        
-
         const { topic, tone, platform } = req.body;
         if (!topic) {
             return res.status(400).json({ error: "Topic is required!" });
         }
 
-        // 2. OpenAI Prompt Construction
         const prompt = `Generate 3 high-retention viral ${platform || 'Instagram Reels'} hooks for the topic: "${topic}" with a ${tone || 'Contrarian'} tone. Make them catchy, engaging, and optimized for Indian creators.`;
 
-        // 3. API Call to OpenAI
         const aiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
             method: "POST",
             headers: {
@@ -35,7 +31,7 @@ app.post('/api/generate-hook', async (req, res) => {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "gpt-4o-mini", // Fast, cheap, and very high quality
+                model: "gpt-4o-mini",
                 messages: [{ role: "user", content: prompt }],
                 temperature: 0.7
             })
@@ -44,21 +40,18 @@ app.post('/api/generate-hook', async (req, res) => {
         const aiData = await aiResponse.json();
         
         if (!aiResponse.ok) {
-            throw new Error(aiData.error?.message || "Failed to fetch from OpenAI provider");
+            throw new Error(aiData.error?.message || "Failed to fetch from OpenAI");
         }
 
-        const generatedText = aiData.choices[0].message.content;
-
-        // 4. Send response back to frontend
-        res.json({ success: true, hooks: generatedText });
+        res.json({ success: true, hooks: aiData.choices[0].message.content });
 
     } catch (err) {
-        console.error("Error generating hook:", err);
-        res.status(500).json({ error: "Internal Server Error", details: err.message });
+        console.error("Error:", err);
+        res.status(500).json({ error: "Server Error", details: err.message });
     }
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
