@@ -17,11 +17,7 @@ app.get('/', (req, res) => {
 // Hook Generation Endpoint
 app.post('/api/generate-hook', async (req, res) => {
     try {
-        // 1. Security Header Check
-        const clientSecret = req.headers['x-app-secret'];
-        if (!clientSecret || clientSecret !== APP_SECRET) {
-            return res.status(403).json({ error: "Access Denied: Invalid or missing app secret." });
-        }
+        
 
         const { topic, tone, platform } = req.body;
         if (!topic) {
